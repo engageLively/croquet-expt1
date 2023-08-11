@@ -2,6 +2,20 @@ class AvatarActor {
     setup() {
         this.setCardData({maxDistance: 0})
         this.listen("DistanceAchieved", "newDistance")
+        this.statusCard = this.createCard({
+            translation: [1, 0, -1],
+            layers: ["pointer"],
+            type: "2d",
+            textureType: "image",
+            textureLocation: "./assets/images/Croquet Gallery.png",
+            fullBright: true,
+            frameColor: 0xcccccc,
+            color: 0xffffff,
+            cornerRadius: 0.05,
+            depth: 0.05,
+            shadow: true
+        })
+        this.listen("MoveStatus", "moveStatus")
     }
 
     newDistance(data) {
@@ -10,6 +24,18 @@ class AvatarActor {
             this.setCardData({maxDistance: data.distance});
         }
     }
+
+    moveStatus(data) {
+        let {v3_rotate, v3_add, q_euler, q_multiply} = Microverse;
+        let offset = v3_rotate([0, 0, -2], data.rotation)
+        let position = v3_add(data.translation, offset)
+        let q = q_euler(0, Math.PI, 0);
+        let rotation =  data.rotation
+        this.statusCard.translateTo(position);
+        this.statusCard.rotateTo(rotation)
+    }
+
+    
 }
 
 class AvatarPawn {
@@ -88,6 +114,8 @@ export class WalkerPawn {
         if (!walkLayer) return vq;
         const x = vq.v[0], z = vq.v[2]
         const dist = x * x + z * z;
+        
+        this.say("MoveStatus", {translation: this.translation, rotation: this.rotation})
         if (dist >= 10000) {
             console.log('sent 100')
             this.say("DistanceAchieved", {distance: 100})
@@ -140,6 +168,7 @@ export class WalkerPawn {
             if (result[1]) {return result;}
             vq = this.walkTerrain(result[0]);
         }
+        
         return [vq, false];
     }
 }
